@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form with Data Validation</title>
+    <script>
+        async function validateData(inputValue, apiUrl) {
+            try {
+                const response = await fetch(apiUrl + inputValue);
+                const data = await response.json();
+                return data.valid; // Assume the API returns an object with a 'valid' property
+            } catch (error) {
+                console.error('Error calling validation API:', error);
+                return false;
+            }
+        }
+
+        function validateField(fieldId, apiUrl) {
+            const inputValue = document.getElementById(fieldId).value;
+            validateData(inputValue, apiUrl)
+                .then(valid => {
+                    const feedbackElement = document.getElementById(fieldId + '-feedback');
+                    feedbackElement.innerText = valid ? 'Valid' : 'Invalid';
+                });
+        }
+    </script>
+</head>
+<body>
+    <h1>Form with Data Validation</h1>
+    <form>
+        <label for="field1">Field 1:</label>
+        <input type="text" id="field1" onblur="validateField('field1', 'https://api.example.com/validate/')">
+        <span id="field1-feedback"></span>
+        <br>
+
+        <label for="field2">Field 2:</label>
+        <input type="text" id="field2" onblur="validateField('field2', 'https://api.example.com/validate/')">
+        <span id="field2-feedback"></span>
+        <br>
+
+        <label for="field3">Field 3:</label>
+        <input type="text" id="field3" onblur="validateField('field3', 'https://api.example.com/validate/')">
+        <span id="field3-feedback"></span>
+        <br>
+
+        <label for="field4">Field 4:</label>
+        <input type="text" id="field4" onblur="validateField('field4', 'https://api.example.com/validate/')">
+        <span id="field4-feedback"></span>
+        <br>
+
+        <label for="field5">Field 5:</label>
+        <input type="text" id="field5" onblur="validateField('field5', 'https://api.example.com/validate/')">
+        <span id="field5-feedback"></span>
+        <br>
+
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>

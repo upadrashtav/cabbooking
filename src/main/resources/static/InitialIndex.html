@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<title>Book Cab</title>
+	<style>
+		.center{
+			margin:auto;
+			width: 60%;
+			border: 3px solid #FFA500;
+			padding:10px
+			}
+	</style>
+</head>
+
+<body>
+	<div class="center">
+		<h3> Book A Cab</h3>
+		<form action="http://localhost:8081/api/bookcab/addbooking" method="post" onsubmit="handleSubmit(event)">
+			
+			
+			<label for="typeOfCab">Type Of Cab: </label><br>
+			<input type="text" id="typeOfCab" name="typeOfCab" placeholder="2"><br>
+			<label for="username">User Name: </label><br>
+			<input type="text" id="username" name="username" placeholder="Your Name"><br>
+			<label for="userphonenumber">User Phone Number: </label><br>
+			<input type="text" id="userphone" name="userphone" placeholder="xxx-xxx-xxxx"><br>
+			<label for="useremail">User Email: </label><br>
+			<input type="text" id="useremail" name="useremail" placeholder="Yourname@gmail.com"><br>
+			<label for="pickupdate">Pickup Date: </label><br>
+			<input type="text" id="pickupdate" name="pickupdate" placeholder="mm/dd/yyyy"><br>
+			<label for="pickuptime: ">Pickup Time: </label><br>
+			<input type="text" id="pickuptime" name="pickuptime" placeholder="xx:xx (Military Format)"><br>
+			
+			<label for="from">From Location: </label><br>
+			<select id="fromLocationSelect" name="fromLocationSelect"></select>
+			<button type="button" onclick="fetchLocations().then(locations => {populateDropdown(locations, 'fromLocationSelect')})">Load Locations</button><br>	
+			
+			<label for="to">To Location: </label><br>
+			<select id="toLocationSelect" name="toLocationSelect"></select>
+			<button type="button" onclick="fetchLocations().then(locations => {populateDropdown(locations, 'toLocationSelect')})">Load Locations</button><br>
+			
+			<label for="distance">Distance (in Miles)</label><br>
+			<span id="distanceDisplay"></span><br>
+			
+			<input type="hidden" id="fareInput" name="fare">
+			<label for="fare">Fare: </label><br>
+			<span id="fareDisplay"></span><br><br>
+			
+			<!-- Displaying confirmation message -->
+			<div id="confirmationMessage" style="display: none;"></div>
+			
+			<input type="submit" value="Submit">
+		</form>
+		
+		<script>
+		
+		// Function to fetch locations from the REST API
+		function fetchLocations() {
+		    const apiUrl = 'http://localhost:8282/locations/findAllLocations';
+
+		    // Fetch data from the API
+		    return fetch(apiUrl)
+		        .then(response => response.json())
+		        .catch(error => {
+		            console.error('Error fetching locations:', error);
+		            return []; // Return an empty array in case of an error
+		        });
+		}
+
+		// Function to populate the dropdown with locations
+		function populateDropdown(locations, dropdownElementId) {
+		    const dropdownSelect = document.getElementById(dropdownElementId);
+
+		    // Clear existing options
+		    dropdownSelect.innerHTML = '';
+
+		    // Add a default option
+		    const defaultOption = document.createElement('option');
+		    defaultOption.value = '';
+		    defaultOption.text = 'Select a location';
+		    dropdownSelect.appendChild(defaultOption);
+
+		    // Add options for each location
+		    locations.forEach(location => {
+		        const option = document.createElement('option');
+		        option.value = location.location; // Replace 'id' with the actual property representing the location ID
+		        option.text = location.location; // Replace 'name' with the actual property representing the location name
+		        dropdownSelect.appendChild(option);
+		    });
+		}
+
+		// Example usage:
+		fetchLocations().then(locations => {
+		    // Populate the first dropdown
+		    populateDropdown(locations, 'fromLocationSelect');
+
+		    // Populate another dropdown with the same data
+		    populateDropdown(locations, 'toLocationSelect');
+		});
+		
+		// Function to calculate fare and distance
+		function calculateFareAndDistance() {
+		    // Get selected pickup and drop-off locations
+		    const fromLocation = document.getElementById('fromLocationSelect').value.trim();
+		    const toLocation = document.getElementById('toLocationSelect').value.trim();
+
+		    // Concatenate the values of FromLocation and ToLocation
+		    const concatenatedValue = fromLocation + toLocation;
+
+		    // Call the REST API to fetch fare and distance
+		    fetch(`http://localhost:8282/loc2loc/findByLoc2Loc/${concatenatedValue}`)
+		        .then(response => response.json())
+		        .then(data => {
+		            // Extract fare and distance from the response
+		            const fare = data.fare;
+		            const distance = data.distance;
+
+		            // Update the display elements
+		            document.getElementById('fareDisplay').textContent = fare;
+		            document.getElementById("fareInput").value = fare;
+		            document.getElementById('distanceDisplay').textContent = distance;
+		        })
+		        .catch(error => {
+		            console.error('Error fetching fare and distance:', error);
+		            // Optionally handle error
+		        });
+		}
+
+		// Call the function when the user changes the pickup or drop-off locations
+		document.getElementById('fromLocationSelect').addEventListener('change', calculateFareAndDistance);
+		document.getElementById('toLocationSelect').addEventListener('change', calculateFareAndDistance);
+
+		// Function to handle form submission
+		function handleSubmit(event) {
+		    event.preventDefault(); // Prevent default form submission behavior
+
+		    // Perform any form validation if needed
+		    const pickupDateInput = document.getElementById('pickupdate').value;
+		    const pickupTimeInput = document.getElementById('pickuptime').value;
+		    
+		    //Get current Date and Time
+		    const currentDate = new Date();
+		    const currentDateTime = new Date();
+		    currentDateTime.setHours(currentDateTime.getHours() + 1) // Add one hour to time
+		    
+		    //Convert pickup date and time to strings to Date objects
+		    const pickupDateTime = new Date(`${pickupDateInput} ${pickupTimeInput}`);
+		    
+		    //Check if current date is greater than pickup date
+		    if (pickupDateTime < currentDate){
+		    	alert('Pickup date cannot be earlier than the current date');
+		    	return; //stop form submission
+		    }
+		    
+		    //Check if current time is greater than pickup time
+		    if (pickupDateTime < currentDateTime){
+		    	alert ('Pickup time must be atleast one hour ahead of the current time');
+		    	return; //stop form submission
+		    }
+		    
+		    //If validation passes, submit the form and manually trigger the form submission
+		    event.target.submit();
+		    // Simulate form submission (replace this with actual form submission code)
+		    // Here, we're just displaying a confirmation message
+		    
+		    showConfirmationMessage();
+		}
+
+		// Function to display confirmation message
+		function showConfirmationMessage() {
+		    const confirmationDiv = document.getElementById('confirmationMessage');
+		    confirmationDiv.textContent = 'Cab booking confirmed!';
+		    confirmationDiv.style.display = 'block'; // Show the confirmation message
+		}
+
+		// Attach handleSubmit function to the form's submit event
+		document.querySelector('form').addEventListener('submit', handleSubmit);
+	
+
+</script>
+		
+		
+	</div>
+</body>
+
+</html>
